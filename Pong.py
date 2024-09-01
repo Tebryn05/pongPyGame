@@ -51,14 +51,14 @@ while abs(ball_movement.y) < 150:
     ball_movement.y = random.randint(-300, 300) 
 
 # function for controlling how the ball moves
-def ball_move(ball_pos):
+def ball_move(ball_pos, player_score, cpu_score):
 
     # ball positions being affected by ball_movement times delta time
     ball_pos.x += ball_movement.x * dt
     ball_pos.y += ball_movement.y * dt
 
-    # if the ball goes past the wall reset it and give it another random movement speed
-    if ball_pos.x <= 0 or ball_pos.x >= screen.get_width():
+    # if the ball goes past the left wall add a point to CPU then reset the ball and give it another random movement speed
+    if ball_pos.x <= 0:
         ball_pos.x = screen.get_width()/2
         ball_pos.y = screen.get_height()/2
         ball_movement.x = random.randint(-300, 300)
@@ -70,9 +70,30 @@ def ball_move(ball_pos):
         while abs(ball_movement.y) < 150:
             ball_movement.y = random.randint(-300, 300)
 
+        cpu_score += 1
+
         # print the ball movement
         print(ball_movement.x, ball_movement.y)
+        print(cpu_score)
 
+    # if the ball goes past the right wall add a point to player then reset the ball and give it another random movement speed
+    if ball_pos.x >= screen.get_width():
+        ball_pos.x = screen.get_width()/2
+        ball_pos.y = screen.get_height()/2
+        ball_movement.x = random.randint(-300, 300)
+        ball_movement.y = random.randint(-300, 300)
+
+        # while ball movements are slow generate random integers to make them faster        
+        while abs(ball_movement.x) < 150:
+            ball_movement.x = random.randint(-300, 300)
+        while abs(ball_movement.y) < 150:
+            ball_movement.y = random.randint(-300, 300)
+
+        player_score += 1
+
+        # print the ball movement
+        print(ball_movement.x, ball_movement.y)
+        print(player_score)
     # if the ball tries to go above then make it bounce off the top wall
     if ball_pos.y <= 0:
         ball_movement.y = random.randint(150, 300)
@@ -94,6 +115,8 @@ def ball_move(ball_pos):
 
         # not typing this again
         print(ball_movement.y)
+
+    return player_score, cpu_score
        
 # main loop
 while running:
@@ -172,7 +195,7 @@ while running:
             ball_movement.y = random.choice([-150, 150])
         
     # call ball_movve
-    ball_move(ball_pos)
+    player_score, cpu_score = ball_move(ball_pos, player_score, cpu_score)
     # flip() the display to put your work on screen 
     pygame.display.flip()
     print(player_pos)
