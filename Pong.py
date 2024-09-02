@@ -43,6 +43,9 @@ ball_radius = 14
 player_score = 0
 cpu_score = 0
 
+# pause variable
+paused = False
+
 # Paddle Speed
 paddle_speed = 300
 
@@ -148,6 +151,9 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                paused = not paused
 
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
@@ -176,56 +182,64 @@ while running:
     cpuScoreRect.center = ((screen.get_width()/2) + 100, 64)
     screen.blit(cpuScore, cpuScoreRect)
 
-    # move player paddle
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        player_pos.y -= 300 * dt
-    if keys[pygame.K_s]:
-        player_pos.y += 300 * dt
+    # pause mechanic
+    if paused:
+        pause_message = scoreFont.render("PAUSED", True, "gray")
+        pause_message_rect = pause_message.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+        screen.blit(pause_message, pause_message_rect)
+    else:
+        # move player paddle
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            player_pos.y -= 300 * dt
+        if keys[pygame.K_s]:
+            player_pos.y += 300 * dt
+            
+
+        # stop player from moving off the map
+        if player_pos.y >= 567:
+            player_pos.y = 567
+        elif player_pos.y <= 4:
+            player_pos.y = 4
+
         
 
-    # stop player from moving off the map
-    if player_pos.y >= 567:
-        player_pos.y = 567
-    elif player_pos.y <= 4:
-        player_pos.y = 4
-
-    
-
-    # collision with paddles
-    if player_pos.x <= ball_pos.x <= player_pos.x + paddle_width + ball_radius and player_pos.y <= ball_pos.y <= player_pos.y + paddle_height:
-        ball_movement.x *= -1 
+        # collision with paddles
+        if player_pos.x <= ball_pos.x <= player_pos.x + paddle_width + ball_radius and player_pos.y <= ball_pos.y <= player_pos.y + paddle_height:
+            ball_movement.x *= -1 
 
 
-        if ball_pos.y > player_pos.y + (paddle_height / 3):
-            ball_movement.y = random.randint(150, 400)
-        elif ball_pos.y < player_pos.y - (paddle_height / 3):
-            ball_movement.y = random.randint(-400, -150)
-        else:
-            ball_movement.y = random.choice([-150, 150])
+            if ball_pos.y > player_pos.y + (paddle_height / 3):
+                ball_movement.y = random.randint(150, 400)
+            elif ball_pos.y < player_pos.y - (paddle_height / 3):
+                ball_movement.y = random.randint(-400, -150)
+            else:
+                ball_movement.y = random.choice([-150, 150])
 
-    if cpu_pos.x >= ball_pos.x >= cpu_pos.x - paddle_width + ball_radius and cpu_pos.y <= ball_pos.y <= cpu_pos.y + paddle_height:
-        ball_movement.x *= -1
+        if cpu_pos.x >= ball_pos.x >= cpu_pos.x - paddle_width + ball_radius and cpu_pos.y <= ball_pos.y <= cpu_pos.y + paddle_height:
+            ball_movement.x *= -1
 
-        if ball_pos.y > cpu_pos.y + (paddle_height / 3):
-            ball_movement.y = random.randint(150, 400)
-        elif ball_pos.y < cpu_pos.y - (paddle_height / 3):
-            ball_movement.y = random.randint(-400, -150)
-        else:
-            ball_movement.y = random.choice([-150, 150])
-        
-    # call ball_movve
-    player_score, cpu_score = ball_move(ball_pos, player_score, cpu_score)
+            if ball_pos.y > cpu_pos.y + (paddle_height / 3):
+                ball_movement.y = random.randint(150, 400)
+            elif ball_pos.y < cpu_pos.y - (paddle_height / 3):
+                ball_movement.y = random.randint(-400, -150)
+            else:
+                ball_movement.y = random.choice([-150, 150])
+            
+        # call ball_movve
+        player_score, cpu_score = ball_move(ball_pos, player_score, cpu_score)
 
-    # call CPU_AI
-    CPU_AI(cpu_pos, paddle_speed, dt, ball_pos)
+        # call CPU_AI
+        CPU_AI(cpu_pos, paddle_speed, dt, ball_pos)
 
     # flip() the display to put your work on screen 
     pygame.display.flip()
     print(player_pos)
+
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
     dt = clock.tick(60) / 1000
+
 
 pygame.quit()
