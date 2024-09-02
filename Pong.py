@@ -1,5 +1,12 @@
+# Tebryn J. Branch
+# Started: August 30th, 2024
+# Last updated: September 2nd, 2024
+# Pong in Pygame
+
+# import modules needed
 import pygame
 import random
+import time
 
 # pygame setup
 pygame.init()
@@ -36,19 +43,22 @@ ball_radius = 14
 player_score = 0
 cpu_score = 0
 
+# Paddle Speed
+paddle_speed = 300
+
 # ball movement with random numbers at start
-ball_movement = pygame.Vector2(random.randint(-300, 300), random.randint(-300, 300))
+ball_movement = pygame.Vector2(random.randint(-400, 400), random.randint(-400, 400))
 
 # print the ball movement at the start of the game
 print(ball_movement.x, ball_movement.y)
 
 # while the ball movement for x is too slow, keep generating random integers until you get a faster one
 while abs(ball_movement.x) < 150:
-    ball_movement.x = random.randint(-300, 300)
+    ball_movement.x = random.randint(-400, 400)
 
 # while the ball movement for y is too slow, keep generating random integers until you get a faster one
 while abs(ball_movement.y) < 150:
-    ball_movement.y = random.randint(-300, 300) 
+    ball_movement.y = random.randint(-400, 400) 
 
 # function for controlling how the ball moves
 def ball_move(ball_pos, player_score, cpu_score):
@@ -61,14 +71,14 @@ def ball_move(ball_pos, player_score, cpu_score):
     if ball_pos.x <= 0:
         ball_pos.x = screen.get_width()/2
         ball_pos.y = screen.get_height()/2
-        ball_movement.x = random.randint(-300, 300)
-        ball_movement.y = random.randint(-300, 300)
+        ball_movement.x = random.randint(-400, 400)
+        ball_movement.y = random.randint(-400, 400)
 
         # while ball movements are slow generate random integers to make them faster        
         while abs(ball_movement.x) < 150:
-            ball_movement.x = random.randint(-300, 300)
+            ball_movement.x = random.randint(-400, 400)
         while abs(ball_movement.y) < 150:
-            ball_movement.y = random.randint(-300, 300)
+            ball_movement.y = random.randint(-400, 400)
 
         cpu_score += 1
 
@@ -80,14 +90,14 @@ def ball_move(ball_pos, player_score, cpu_score):
     if ball_pos.x >= screen.get_width():
         ball_pos.x = screen.get_width()/2
         ball_pos.y = screen.get_height()/2
-        ball_movement.x = random.randint(-300, 300)
-        ball_movement.y = random.randint(-300, 300)
+        ball_movement.x = random.randint(-400, 400)
+        ball_movement.y = random.randint(-400, 400)
 
         # while ball movements are slow generate random integers to make them faster        
         while abs(ball_movement.x) < 150:
-            ball_movement.x = random.randint(-300, 300)
+            ball_movement.x = random.randint(-400, 400)
         while abs(ball_movement.y) < 150:
-            ball_movement.y = random.randint(-300, 300)
+            ball_movement.y = random.randint(-400, 400)
 
         player_score += 1
 
@@ -96,28 +106,41 @@ def ball_move(ball_pos, player_score, cpu_score):
         print(player_score)
     # if the ball tries to go above then make it bounce off the top wall
     if ball_pos.y <= 0:
-        ball_movement.y = random.randint(150, 300)
+        ball_movement.y = random.randint(150, 400)
         
         # while ball movement for y is slow generate random integers to make them faster
         while abs(ball_movement.y) < 150:
-            ball_movement.y = random.randint(-300, 300)
+            ball_movement.y = random.randint(-400, 400)
 
         # print the ball movement for y
         print(ball_movement.y)
     
     # if it tries to go below the screen make it bounce off the bottom wall
     if ball_pos.y >= screen.get_height():
-        ball_movement.y = random.randint(-300, -150) 
+        ball_movement.y = random.randint(-400, -150) 
 
         # not typing this again
         while abs(ball_movement.y) < 150:
-            ball_movement.y = random.randint(-300, 300)
+            ball_movement.y = random.randint(-400, 400)
 
         # not typing this again
         print(ball_movement.y)
 
     return player_score, cpu_score
-       
+
+def CPU_AI(cpu_pos, paddle_speed, dt, ball_pos):
+
+    if ball_pos.y < cpu_pos.y:
+        cpu_pos.y -= paddle_speed * dt
+    elif ball_pos.y > cpu_pos.y:
+        cpu_pos.y += paddle_speed * dt
+
+    if cpu_pos.y >= 567:
+        cpu_pos.y = 567
+    elif cpu_pos.y <= 4:
+        cpu_pos.y = 4
+
+
 # main loop
 while running:
     # poll for events
@@ -159,12 +182,7 @@ while running:
         player_pos.y -= 300 * dt
     if keys[pygame.K_s]:
         player_pos.y += 300 * dt
-
-    # little thing to test score system
-    if keys[pygame.K_j]:
-        player_score += 1 
-    elif keys[pygame.K_k]:
-        player_score -= 1
+        
 
     # stop player from moving off the map
     if player_pos.y >= 567:
@@ -172,30 +190,36 @@ while running:
     elif player_pos.y <= 4:
         player_pos.y = 4
 
+    
+
     # collision with paddles
     if player_pos.x <= ball_pos.x <= player_pos.x + paddle_width + ball_radius and player_pos.y <= ball_pos.y <= player_pos.y + paddle_height:
         ball_movement.x *= -1 
 
 
-        if ball_pos.y > player_pos.y + (paddle_height / 4):
-            ball_movement.y = random.randint(150, 300)
-        elif ball_pos.y < player_pos.y - (paddle_height / 4):
-            ball_movement.y = random.randint(-300, -150)
+        if ball_pos.y > player_pos.y + (paddle_height / 3):
+            ball_movement.y = random.randint(150, 400)
+        elif ball_pos.y < player_pos.y - (paddle_height / 3):
+            ball_movement.y = random.randint(-400, -150)
         else:
             ball_movement.y = random.choice([-150, 150])
 
     if cpu_pos.x >= ball_pos.x >= cpu_pos.x - paddle_width + ball_radius and cpu_pos.y <= ball_pos.y <= cpu_pos.y + paddle_height:
         ball_movement.x *= -1
 
-        if ball_pos.y > cpu_pos.y + (paddle_height / 4):
-            ball_movement.y = random.randint(150, 300)
-        elif ball_pos.y < cpu_pos.y - (paddle_height / 4):
-            ball_movement.y = random.randint(-300, -150)
+        if ball_pos.y > cpu_pos.y + (paddle_height / 3):
+            ball_movement.y = random.randint(150, 400)
+        elif ball_pos.y < cpu_pos.y - (paddle_height / 3):
+            ball_movement.y = random.randint(-400, -150)
         else:
             ball_movement.y = random.choice([-150, 150])
         
     # call ball_movve
     player_score, cpu_score = ball_move(ball_pos, player_score, cpu_score)
+
+    # call CPU_AI
+    CPU_AI(cpu_pos, paddle_speed, dt, ball_pos)
+
     # flip() the display to put your work on screen 
     pygame.display.flip()
     print(player_pos)
