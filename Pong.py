@@ -60,14 +60,37 @@ paddle_speed = 300
 # ball movement with random numbers at start
 ball_movement = pygame.Vector2(random.randint(-400, 400), random.randint(-400, 400))
 
+# ball's collision box
+ball_left = ball_pos.x - ball_radius
+ball_right = ball_pos.x + ball_radius
+ball_top = ball_pos.y - ball_radius
+ball_bottom = ball_pos.y + ball_radius
+
+# player and CPU collision box
+player_top = player_pos.y
+player_bottom = player_pos.y + paddle_height
+player_right = player_pos.x + paddle_width
+player_left = player_pos.x
+
+cpu_top = cpu_pos.y
+cpu_bottom = cpu_pos.y + paddle_height
+cpu_right = cpu_pos.x + paddle_width
+cpu_left = cpu_pos.x
+
 # sound effects (Temporary)
-ballWallHit = pygame.mixer.Sound("wallhit.mp3")
-paddleHitBall = pygame.mixer.Sound("paddlehit.mp3")
-scoreSound = pygame.mixer.Sound("[Sound Library] Score - Sound Effect for editing.mp3")
+ballWallHit = pygame.mixer.Sound("sounds/wallhit.mp3")
+paddleHitBall = pygame.mixer.Sound("sounds/paddlehit.mp3")
+scoreSound = pygame.mixer.Sound("sounds/[Sound Library] Score - Sound Effect for editing.mp3")
 
 # win bools
 cpu_win = False
 player_win = False
+
+# screen bools
+mainMenu = True
+inGame = False
+countdown = 5
+
 
 # print the ball movement at the start of the game
 print(ball_movement.x, ball_movement.y)
@@ -79,6 +102,7 @@ while abs(ball_movement.x) < 150:
 # while the ball movement for y is too slow, keep generating random integers until you get a faster one
 while abs(ball_movement.y) < 150:
     ball_movement.y = random.randint(-400, 400) 
+
 
 # function for controlling how the ball moves
 def ball_move(ball_pos, player_score, cpu_score):
@@ -171,9 +195,9 @@ def CPU_AI(cpu_pos, paddle_speed, dt, ball_pos):
 
     '''Basically, if the ball's y position is lower than the cpu's y position, move towards it
     same if its y position is higher than the cpu's position'''
-    if ball_pos.y < cpu_pos.y:
+    if ball_pos.y <= cpu_pos.y:
         cpu_pos.y -= paddle_speed * dt
-    elif ball_pos.y > cpu_pos.y:
+    elif ball_pos.y >= cpu_pos.y:
         cpu_pos.y += paddle_speed * dt
 
     # if the cpu runs into the wall then keep it there
@@ -181,7 +205,6 @@ def CPU_AI(cpu_pos, paddle_speed, dt, ball_pos):
         cpu_pos.y = 567
     elif cpu_pos.y <= 4:
         cpu_pos.y = 4
-
 
 # main loop
 while running:
@@ -194,7 +217,11 @@ while running:
         if event.type == pygame.KEYDOWN:
             # if the space key is pressed, pause or un pause the game depending on what the user did
             if event.key == pygame.K_SPACE:
-                paused = not paused
+                if inGame:
+                    paused = not paused
+            if event.key == pygame.K_t:
+                mainMenu = False
+                inGame = True
             # only if the player wins or the cpu wins
             if player_win == True or cpu_win == True:
                 # restart game 
@@ -208,133 +235,162 @@ while running:
                     player_win = False
                     cpu_win = False
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("black")
+    if mainMenu:
+        gray = (128, 128, 128)
+        screen.fill(gray)
 
-    # draw player paddle
-    player = pygame.draw.rect(screen, "blue", pygame.Rect(player_pos.x, player_pos.y, paddle_width, paddle_height))
+        mainMenuFont = pygame.font.SysFont('OCR A Extended', 60)
+        mainMenuFontLittle = pygame.font.SysFont('OCR A Extended', 40)
 
-    # draw dividing line
-    divider = pygame.draw.rect(screen, "white", pygame.Rect(half_screen.x, half_screen.y,5, screen.get_height()))
+        pongMainMenuText = mainMenuFont.render("PONG", True, "Black")
+        pongMainMenuTextRect = pongMainMenuText.get_rect()
+        pongMainMenuTextRect.center = (screen.get_width()/2, screen.get_height()/2)
+        screen.blit(pongMainMenuText, pongMainMenuTextRect)
 
-    # draw CPU paddle
-    CPU = pygame.draw.rect(screen, "red", pygame.Rect(cpu_pos.x, cpu_pos.y, paddle_width, paddle_height))
+        pongMainMenuStartText = mainMenuFontLittle.render("Press T to Start", True, "Black")
+        pongMainMenuStartTextRect = pongMainMenuStartText.get_rect()
+        pongMainMenuStartTextRect.center = (screen.get_width()/2, (screen.get_height()/2) + 100)
+        screen.blit(pongMainMenuStartText, pongMainMenuStartTextRect)
 
-    if player_win == False and cpu_win == False:
-        # draw ball
-        ball = pygame.draw.circle(screen, "purple", ball_pos, ball_radius)
+        pygame.display.flip()
 
-    # render player score
-    playerScore = scoreFont.render(str(player_score), True, "white")
-    playerScoreRect = playerScore.get_rect()
-    playerScoreRect.center = ((screen.get_width()/2) - 100, 64)
-    screen.blit(playerScore, playerScoreRect)
+    if inGame:
+        # fill the screen with a color to wipe away anything from last frame
+        screen.fill("black")
 
-    # render CPU score
-    cpuScore = scoreFont.render(str(cpu_score), True, "white")
-    cpuScoreRect = cpuScore.get_rect()
-    cpuScoreRect.center = ((screen.get_width()/2) + 100, 64)
-    screen.blit(cpuScore, cpuScoreRect)
+        # draw player paddle
+        player = pygame.draw.rect(screen, "blue", pygame.Rect(player_pos.x, player_pos.y, paddle_width, paddle_height))
 
-    # pause mechanic
-    if paused:
-        # render pause_message and set in the middle of the screen
-        pause_message = scoreFont.render("PAUSED", True, "gray")
-        pause_message_rect = pause_message.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
-        screen.blit(pause_message, pause_message_rect)
-    else:
-        # move player paddle
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
-            player_pos.y -= 300 * dt
-        if keys[pygame.K_s]:
-            player_pos.y += 300 * dt
-            
+        # draw dividing line
+        divider = pygame.draw.rect(screen, "white", pygame.Rect(half_screen.x, half_screen.y,5, screen.get_height()))
 
-        # stop player from moving off the map
-        if player_pos.y >= 567:
-            player_pos.y = 567
-        elif player_pos.y <= 4:
-            player_pos.y = 4
-
-        
-
-        # collision with paddles
-        if player_pos.x <= ball_pos.x <= player_pos.x + paddle_width + ball_radius and player_pos.y <= ball_pos.y <= player_pos.y + paddle_height:
-            # reverse the ball's x movement
-            ball_movement.x *= -1 
-            
-            # play the sound effect of the ball hitting off the paddle
-            paddleHitBall.play()
-
-            # depending on where the ball hits the paddle, move it accordingly
-            if ball_pos.y > player_pos.y + (paddle_height / 3):
-                ball_movement.y = random.randint(150, 400)
-            elif ball_pos.y < player_pos.y - (paddle_height / 3):
-                ball_movement.y = random.randint(-400, -150)
-            else:
-                ball_movement.y = random.choice([-150, 150])
-
-        # if the ball hits the cpu's paddle
-        if cpu_pos.x >= ball_pos.x >= cpu_pos.x - paddle_width + ball_radius and cpu_pos.y <= ball_pos.y <= cpu_pos.y + paddle_height:
-            # reverse the ball's x movement
-            ball_movement.x *= -1
-
-            # play paddle hiting ball sound effect
-            paddleHitBall.play()
-
-            # depending on where the ball hits the paddle change the ball's y movement accordingly
-            if ball_pos.y > cpu_pos.y + (paddle_height / 3):
-                ball_movement.y = random.randint(150, 400)
-            elif ball_pos.y < cpu_pos.y - (paddle_height / 3):
-                ball_movement.y = random.randint(-400, -150)
-            else:
-                ball_movement.y = random.choice([-150, 150])
-
+        # draw CPU paddle
+        CPU = pygame.draw.rect(screen, "red", pygame.Rect(cpu_pos.x, cpu_pos.y, paddle_width, paddle_height))
 
         if player_win == False and cpu_win == False:
-            # call ball_move
-            player_score, cpu_score = ball_move(ball_pos, player_score, cpu_score)
-            # call CPU_AI
-            CPU_AI(cpu_pos, paddle_speed, dt, ball_pos)
+            # draw ball
+            ball = pygame.draw.circle(screen, "purple", ball_pos, ball_radius)
 
-        
-        # if the player score is at 5 or more and the cpu hasn't won yet, make it so that the player's win message is printed
-        if player_score >= 5 and cpu_win == False:
-            win_message = scoreFont.render("Player Wins!", True, "Gray")
-            win_message_rect = win_message.get_rect(center=((screen.get_width() / 2) - 225, screen.get_height() / 2))
-            screen.blit(win_message, win_message_rect)
-            player_win = True # change player win to true so that the below if statement can't be run
+        # render player score
+        playerScore = scoreFont.render(str(player_score), True, "white")
+        playerScoreRect = playerScore.get_rect()
+        playerScoreRect.center = ((screen.get_width()/2) - 100, 64)
+        screen.blit(playerScore, playerScoreRect)
 
-            # show player how to restart
-            restartFont = pygame.font.SysFont('Courier New', 40)
-            restart_message = restartFont.render("R to Restart", True, "Gray")
-            restart_message_rect = restart_message.get_rect(center=((screen.get_width()/ 2) - 225, (screen.get_height()/ 2) + 75))
-            screen.blit(restart_message, restart_message_rect)
+        # render CPU score
+        cpuScore = scoreFont.render(str(cpu_score), True, "white")
+        cpuScoreRect = cpuScore.get_rect()
+        cpuScoreRect.center = ((screen.get_width()/2) + 100, 64)
+        screen.blit(cpuScore, cpuScoreRect)
 
-        # if the cpu score is at 5 or more and the player hasn't won yet, make it so that the cpu's win message is printed
-        if cpu_score >= 5 and player_win == False:
-            win_message = scoreFont.render("CPU Wins!", True, "Gray")
-            win_message_rect = win_message.get_rect(center=((screen.get_width() / 2) + 225, screen.get_height() / 2))
-            screen.blit(win_message, win_message_rect)
-            cpu_win = True # change cpu win to true so that the above if statement can't be run
+        if countdown > 0:
+            countDownMessage = scoreFont.render(str(countdown), True, "gray")
+            countdownMessageRect = countDownMessage.get_rect()
+            countdownMessageRect.center = (screen.get_width() / 2 - 50, screen.get_height()/2)
+            screen.blit(countDownMessage, countdownMessageRect)
+
+        if countdown <= 0:
+            # pause mechanic
+            if paused:
+                # render pause_message and set in the middle of the screen
+                pause_message = scoreFont.render("PAUSED", True, "gray")
+                pause_message_rect = pause_message.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+                screen.blit(pause_message, pause_message_rect)
+            else:
+                # move player paddle
+                keys = pygame.key.get_pressed()
+                if keys[pygame.K_w]:
+                    player_pos.y -= 300 * dt
+                if keys[pygame.K_s]:
+                    player_pos.y += 300 * dt
+                    
+
+                # stop player from moving off the map
+                if player_pos.y >= 567:
+                    player_pos.y = 567
+                elif player_pos.y <= 4:
+                    player_pos.y = 4
+
+                print(ball_pos)        
+
+                # collision with paddles
+                if player_pos.x <= ball_pos.x <= player_pos.x + paddle_width + ball_radius and player_pos.y <= ball_pos.y <= player_pos.y + paddle_height:
+                    # reverse the ball's x movement
+                    ball_movement.x = random.randint(150, 400) 
+                    
+                    # play the sound effect of the ball hitting off the paddle
+                    paddleHitBall.play()
+
+                    # depending on where the ball hits the paddle, move it accordingly
+                    if ball_pos.y > player_pos.y + (paddle_height / 3):
+                        ball_movement.y = random.randint(150, 400)
+                    elif ball_pos.y < player_pos.y - (paddle_height / 3):
+                        ball_movement.y = random.randint(-400, -150)
+                    else:
+                        ball_movement.y = random.choice([-150, 150])
+
+                # if the ball hits the cpu's paddle
+                if cpu_pos.x >= ball_pos.x >= cpu_pos.x - paddle_width + ball_radius and cpu_pos.y <= ball_pos.y <= cpu_pos.y + paddle_height:
+                    # reverse the ball's x movement
+                    ball_movement.x = random.randint(-400, -150)
+
+                    # play paddle hiting ball sound effect
+                    paddleHitBall.play()
+
+                    # depending on where the ball hits the paddle change the ball's y movement accordingly
+                    if ball_pos.y > cpu_pos.y + (paddle_height / 3):
+                        ball_movement.y = random.randint(150, 400)
+                    elif ball_pos.y < cpu_pos.y - (paddle_height / 3):
+                        ball_movement.y = random.randint(-400, -150)
+                    else:
+                        ball_movement.y = random.choice([-150, 150])
+
+                if player_win == False and cpu_win == False:
+                    # call ball_move
+                    player_score, cpu_score = ball_move(ball_pos, player_score, cpu_score)
+                    # call CPU_AI
+                    CPU_AI(cpu_pos, paddle_speed, dt, ball_pos)
+
+                
+                # if the player score is at 5 or more and the cpu hasn't won yet, make it so that the player's win message is printed
+                if player_score >= 5 and cpu_win == False:
+                    win_message = scoreFont.render("Player Wins!", True, "Gray")
+                    win_message_rect = win_message.get_rect(center=((screen.get_width() / 2) - 225, screen.get_height() / 2))
+                    screen.blit(win_message, win_message_rect)
+                    player_win = True # change player win to true so that the below if statement can't be run
+
+                    # show player how to restart
+                    restartFont = pygame.font.SysFont('Courier New', 40)
+                    restart_message = restartFont.render("R to Restart", True, "Gray")
+                    restart_message_rect = restart_message.get_rect(center=((screen.get_width()/ 2) - 225, (screen.get_height()/ 2) + 75))
+                    screen.blit(restart_message, restart_message_rect)
+
+                # if the cpu score is at 5 or more and the player hasn't won yet, make it so that the cpu's win message is printed
+                if cpu_score >= 5 and player_win == False:
+                    win_message = scoreFont.render("CPU Wins!", True, "Gray")
+                    win_message_rect = win_message.get_rect(center=((screen.get_width() / 2) + 225, screen.get_height() / 2))
+                    screen.blit(win_message, win_message_rect)
+                    cpu_win = True # change cpu win to true so that the above if statement can't be run
+                    
+                    # show player how to restart
+                    restartFont = pygame.font.SysFont('Courier New', 40)
+                    restart_message = restartFont.render("R to Restart", True, "Gray")
+                    restart_message_rect = restart_message.get_rect(center=((screen.get_width()/ 2) + 225, (screen.get_height()/ 2) + 75))
+                    screen.blit(restart_message, restart_message_rect)
             
-            # show player how to restart
-            restartFont = pygame.font.SysFont('Courier New', 40)
-            restart_message = restartFont.render("R to Restart", True, "Gray")
-            restart_message_rect = restart_message.get_rect(center=((screen.get_width()/ 2) + 225, (screen.get_height()/ 2) + 75))
-            screen.blit(restart_message, restart_message_rect)
-        
-        
+            
 
-    # flip() the display to put your work on screen 
-    pygame.display.flip()
-    print(player_pos)
+        # flip() the display to put your work on screen 
+        pygame.display.flip()
 
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
-    dt = clock.tick(60) / 1000
+        if countdown > 0:
+            time.sleep(1)
+            countdown -= 1
+
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+        dt = clock.tick(60) / 1000
 
 
 pygame.quit()
